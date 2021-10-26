@@ -1,10 +1,8 @@
 package ch.oronk.service
 
 import ch.oronk.model.Movie
-import ch.oronk.model.MovieJsonWraper
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.JsonReader
-import com.squareup.moshi.Moshi
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -21,8 +19,8 @@ class TMDbService {
     private val SORT_PART = "&sort_by=popularity.desc"
 
     fun getRandomMovie(): List<Movie> {
-        val url = URL(BASE_URL+DISCOVER_API_URL+API_KEY_PART+LANGUAGE_KEY+LANGUAGE+SORT_PART)
-
+        val url = URL(BASE_URL + DISCOVER_API_URL + API_KEY_PART + LANGUAGE_KEY + LANGUAGE + SORT_PART)
+        var returnValue:List<Movie> = emptyList()
         var con = url.openConnection()
         if (con is HttpURLConnection) {
             con.requestMethod = "GET"
@@ -30,12 +28,14 @@ class TMDbService {
             val message = readInput(con.inputStream)
             println(message)
             println()
-            jsonToMovie(message)
+            val mapper = ObjectMapper()
+            var jsonNode: JsonNode = mapper.readTree(message)
+            returnValue = jsonToMovie(jsonNode)
         }
-        return listOf()
+        return returnValue
     }
 
-    private fun readInput(inputStream: InputStream): String?{
+    private fun readInput(inputStream: InputStream): String? {
         val input = BufferedReader(
             InputStreamReader(inputStream)
         )
@@ -48,12 +48,21 @@ class TMDbService {
         return content.toString()
     }
 
-    private fun jsonToMovie(json: String?) :List<Movie> {
-        val moshi = Moshi.Builder().build()
-        val adapter = moshi.adapter<MovieJsonWraper>(MovieJsonWraper::class.java)
-        val movies = adapter.fromJson(json)
-        println(movies)
-        return movies?.list ?: listOf()
+    private fun jsonToMovie(json: JsonNode?): List<Movie> {
+        var movieList = ArrayList<Movie>()
+        var results = json?.get("results")
+        if (results != null) {
+            for (node in results) {
+                val name: String? = node.get("title").asText()
+                val id: Int? = node.get("id").asInt()
+                val description: String? = node.get("overview").asText()
+                val img: String? = node.get("poster_path").asText()
+                if (name != null && id != null && description != null && img != null) {
+                    movieList.add(Movie(id, name, description, img))
+                }
+            }
+        }
+        return movieList
     }
 
 }
