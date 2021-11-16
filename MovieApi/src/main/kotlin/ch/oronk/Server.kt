@@ -3,6 +3,7 @@ package ch.oronk
 import ch.oronk.service.MovieService
 import com.apurebase.kgraphql.GraphQL
 import io.ktor.application.*
+import io.ktor.features.*
 import io.ktor.response.*
 import io.ktor.routing.*
 
@@ -10,6 +11,9 @@ import io.ktor.routing.*
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module(testing: Boolean = false) {
+    install(CORS){
+        anyHost()
+    }
     install(GraphQL) {
         playground = true
         schema {movieSchema()}
@@ -20,7 +24,7 @@ fun Application.module(testing: Boolean = false) {
         }
         post("/create"){
             val id = MovieService.createGrope()
-            call.respond(id)
+            call.respondText {  id.toString() }
         }
     }
 }

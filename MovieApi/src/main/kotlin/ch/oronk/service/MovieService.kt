@@ -12,7 +12,7 @@ object MovieService {
         val id = groups.keys.sortedDescending().getOrElse(0){1}
         val movies = tmDbService.getRandomMovie()
         val group = Group(movies, emptyList())
-        groups.put(id, group)
+        groups.put(id+1, group)
         return id
     }
 
